@@ -23,12 +23,12 @@ export function Lights() {
 
   return (
     <>
-      <primitive object={target.current} position={[0, 1.2, 0]} />
+      <primitive object={target.current} position={[0, 0.6, 0]} />
       <group ref={rig}>
         {/* Key — the shadow caster. Hard edges via BasicShadowMap on the canvas. */}
         <directionalLight
           position={[3.4, 6.2, 4.2]}
-          intensity={3.1}
+          intensity={3.9}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
@@ -44,12 +44,12 @@ export function Lights() {
         {/* Warm rim from behind for separation — no front fill. */}
         <directionalLight
           position={[-1.5, 4, -5.5]}
-          intensity={1.1}
+          intensity={1.4}
           color={"#fff0dc"}
           target={target.current}
         />
-        {/* A whisper of ambient so the shadow side never crushes to pure black. */}
-        <ambientLight intensity={0.14} />
+        {/* Ambient lift so the whole figure reads brighter. */}
+        <ambientLight intensity={0.4} />
       </group>
     </>
   );
