@@ -1,0 +1,108 @@
+:root {
+  /* Theme is driven purely by the device / system setting. */
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --fg: #000000;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000;
+    --fg: #ffffff;
+  }
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+body {
+  /* Disable iOS rubber-band / text selection / callouts for a native feel. */
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui,
+    sans-serif;
+}
+
+/* The fixed canvas sits behind everything and never blocks the page. */
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: var(--bg);
+  touch-action: none;
+}
+
+/* Native vertical paging lives in this scroll layer above the canvas. */
+.scroller {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: none;
+  /* Let the canvas receive horizontal-orbit / two-finger gestures. */
+  background: transparent;
+}
+
+.page {
+  width: 100%;
+  height: 100dvh;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  pointer-events: none;
+}
+
+/* Minimal loading veil — pure background, nothing else. */
+.veil {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  transition: opacity 0.8s ease;
+}
+
+.veil.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.veil .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--fg);
+  opacity: 0.35;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(0.7);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+}
