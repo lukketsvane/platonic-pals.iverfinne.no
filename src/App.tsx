@@ -48,11 +48,11 @@ export default function App() {
             toneMappingExposure: 1.05,
             powerPreference: "high-performance",
           }}
-          camera={{ position: [0, 1.7, 7.2], fov: 32, near: 0.1, far: 100 }}
+          camera={{ position: [0, 2.0, 9.6], fov: 30, near: 0.1, far: 100 }}
         >
           <color attach="background" args={[bg]} />
           <Suspense fallback={null}>
-            <Scene theme={theme} />
+            <Scene />
           </Suspense>
         </Canvas>
       </div>
