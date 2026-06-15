@@ -9,10 +9,11 @@ export type Pal = {
 };
 
 export const PALS: Pal[] = [
-  { id: "berry", name: "Berry", url: "/models/pal_berry.glb", height: 3.0 },
-  { id: "cone", name: "Cone", url: "/models/pal_cone.glb", height: 3.0 },
-  { id: "pyramid", name: "Pyramid", url: "/models/pal_pyramid.glb", height: 3.0 },
-  { id: "dodeca", name: "Dodeca", url: "/models/pal_dodeca.glb", height: 2.7 },
+  { id: "pal_01", name: "Pal 01", url: "/models/pal_01.glb", height: 3.0 },
+  { id: "pal_02", name: "Pal 02", url: "/models/pal_02.glb", height: 3.0 },
+  { id: "pal_03", name: "Pal 03", url: "/models/pal_03.glb", height: 3.0 },
+  { id: "pal_04", name: "Pal 04", url: "/models/pal_04.glb", height: 3.0 },
+  { id: "pal_05", name: "Pal 05", url: "/models/pal_05.glb", height: 3.0 },
 ];
 
 type State = {
