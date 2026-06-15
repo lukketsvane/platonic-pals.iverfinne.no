@@ -7,7 +7,7 @@ import { Lights } from "./Lights";
 
 const VSPREAD = 6.6; // vertical world-distance between consecutive figures
 const ROT_PER_PAGE = Math.PI; // how far a figure turns across one scroll page
-const LOOK_AT = new THREE.Vector3(0, 1.3, 0); // framing target
+const LOOK_AT = new THREE.Vector3(0, 0.55, 0); // framing target
 
 export function Scene() {
   const groups = useRef<(THREE.Group | null)[]>([]);

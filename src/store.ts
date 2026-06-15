@@ -9,14 +9,13 @@ export type Pal = {
 };
 
 export const PALS: Pal[] = [
-  { id: "pal_01", name: "Pal 01", url: "/models/pal_01.glb", height: 3.0 },
-  { id: "pal_02", name: "Pal 02", url: "/models/pal_02.glb", height: 3.0 },
-  { id: "pal_03", name: "Pal 03", url: "/models/pal_03.glb", height: 3.0 },
-  { id: "pal_04", name: "Pal 04", url: "/models/pal_04.glb", height: 3.0 },
-  { id: "pal_05", name: "Pal 05", url: "/models/pal_05.glb", height: 3.0 },
-  { id: "pal_06", name: "Pal 06", url: "/models/pal_06.glb", height: 3.0 },
-  { id: "pal_07", name: "Pal 07", url: "/models/pal_07.glb", height: 3.0 },
-  { id: "pal_08", name: "Pal 08", url: "/models/pal_08.glb", height: 3.0 },
+  { id: "pal_01", name: "Pal 01", url: "/models/pal_01.glb", height: 1.5 },
+  { id: "pal_02", name: "Pal 02", url: "/models/pal_02.glb", height: 1.5 },
+  { id: "pal_04", name: "Pal 04", url: "/models/pal_04.glb", height: 1.5 },
+  { id: "pal_05", name: "Pal 05", url: "/models/pal_05.glb", height: 1.5 },
+  { id: "pal_06", name: "Pal 06", url: "/models/pal_06.glb", height: 1.5 },
+  { id: "pal_07", name: "Pal 07", url: "/models/pal_07.glb", height: 1.5 },
+  { id: "pal_08", name: "Pal 08", url: "/models/pal_08.glb", height: 1.5 },
 ];
 
 type State = {
