@@ -41,22 +41,15 @@ export function Lights() {
           shadow-camera-bottom={-7}
           target={target.current}
         />
-        {/* Cool fill from the opposite side to model the form. */}
-        <directionalLight
-          position={[-5, 3.4, 2]}
-          intensity={0.9}
-          color={"#dfe7ff"}
-          target={target.current}
-        />
-        {/* Warm rim from behind for separation. */}
+        {/* Warm rim from behind for separation — no front fill. */}
         <directionalLight
           position={[-1.5, 4, -5.5]}
-          intensity={1.2}
+          intensity={1.1}
           color={"#fff0dc"}
           target={target.current}
         />
         {/* A whisper of ambient so the shadow side never crushes to pure black. */}
-        <ambientLight intensity={0.12} />
+        <ambientLight intensity={0.14} />
       </group>
     </>
   );
