@@ -52,3 +52,6 @@ useGLTF.preload("/models/pal_02.glb");
 useGLTF.preload("/models/pal_03.glb");
 useGLTF.preload("/models/pal_04.glb");
 useGLTF.preload("/models/pal_05.glb");
+useGLTF.preload("/models/pal_06.glb");
+useGLTF.preload("/models/pal_07.glb");
+useGLTF.preload("/models/pal_08.glb");
