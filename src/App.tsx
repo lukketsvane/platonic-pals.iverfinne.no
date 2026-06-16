@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useProgress } from "@react-three/drei";
 import * as THREE from "three";
@@ -10,7 +10,8 @@ import { useGestures } from "./useGestures";
 /** Pixelated editorial HUD: wordmark, index counter, big figure name. */
 function Hud() {
   const scroll = useStore((s) => s.scroll);
-  const i = Math.max(0, Math.min(PALS.length - 1, Math.round(scroll)));
+  // Continuous scroll loops past the ends, so fold it back onto a real figure.
+  const i = ((Math.round(scroll) % PALS.length) + PALS.length) % PALS.length;
   const pad = (n: number) => String(n).padStart(2, "0");
   return (
     <div className="hud">
@@ -53,6 +54,12 @@ export default function App() {
   useGestures(scroller);
   useEffect(() => setScroller(ref.current), []);
 
+  // Start on the first real page (page index 1) — page 0 is the leading clone
+  // of the last figure that makes the upward wrap seamless.
+  useLayoutEffect(() => {
+    if (ref.current) ref.current.scrollTop = ref.current.clientHeight;
+  }, []);
+
   const bg = theme === "dark" ? "#000000" : "#ffffff";
 
   return (
@@ -76,11 +83,14 @@ export default function App() {
         </Canvas>
       </div>
 
-      {/* Native vertical paging: one snap page per figure. */}
+      {/* Native vertical paging: one snap page per figure, plus a clone of the
+          last figure before and the first after so scrolling loops forever. */}
       <div className="scroller" ref={ref}>
+        <section className="page" aria-hidden="true" />
         {PALS.map((p) => (
           <section className="page" key={p.id} aria-label={p.name} />
         ))}
+        <section className="page" aria-hidden="true" />
       </div>
 
       <Hud />
