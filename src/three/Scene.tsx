@@ -10,8 +10,9 @@ const VSPREAD = 6.6; // vertical world-distance between consecutive figures
 const ROT_PER_PAGE = Math.PI; // how far a figure turns across one scroll page
 const BASE_YAW = -Math.PI * 0.3; // rest orientation: a 3/4 front view, not side-on
 const LOOK_AT = new THREE.Vector3(0, 1.2, 0); // framing target (figure sits lower)
-const LIFT = 1.35; // how high the figure floats at full charge
-const TAP_STEP = 0.2; // charge added per tap — ~5 taps to fully lift off
+const LIFT = 0.9; // how high the figure ends up gently floating
+const TAP_ENERGY = 0.34; // energy added per tap (~3 quick taps to pop)
+const ENERGY_DECAY = 3.0; // energy bleeds away fast, so taps must keep a tempo
 const WINDOW = 1; // figures kept alive on each side of the active one
 
 const clampIdx = (i: number) => Math.max(0, Math.min(PALS.length - 1, i));
@@ -28,11 +29,10 @@ export function Scene() {
 
   // Tap / hover animation state.
   const lastTap = useRef(0);
-  const charge = useRef(0);
-  const chargeTo = useRef(0);
-  const chargeVel = useRef(0);
-  const wobble = useRef(0);
-  const wobbleT = useRef(0);
+  const energy = useRef(0); // builds up from rapid taps, decays between them
+  const launched = useRef(false); // has it popped & started floating?
+  const floatAmt = useRef(0); // 0..1 smoothed float height
+  const pop = useRef(0); // short, sharp "pop" impulse (drives the squash)
 
   const { camera, raycaster } = useThree();
 
@@ -56,48 +56,60 @@ export function Scene() {
     const a = clampIdx(Math.round(dispScroll.current));
     if (a !== activeRef.current) {
       activeRef.current = a;
-      chargeTo.current = 0; // scrolling away lands the previous figure
+      launched.current = false; // scrolling away lands the previous figure
+      energy.current = 0;
       setActive(a); // remount the window around the new figure
     }
 
-    // Each tap on the centered figure nudges it a little higher; once fully
-    // hovering, a further tap eases it back down. Takes several taps.
+    // Energy bleeds away, so you have to tap-tap-tap within a tempo to build it.
+    energy.current *= Math.exp(-dt * ENERGY_DECAY);
+
+    // A fresh tap on the centered figure.
     if (s.tapNonce !== lastTap.current) {
       lastTap.current = s.tapNonce;
       const g = groups.current.get(activeRef.current);
       if (g) {
         raycaster.setFromCamera(s.tapNDC as THREE.Vector2, camera);
         if (raycaster.intersectObject(g, true).length > 0) {
-          chargeTo.current =
-            chargeTo.current >= 0.999 ? 0 : Math.min(1, chargeTo.current + TAP_STEP);
-          wobble.current = Math.max(wobble.current, 0.4);
-          wobbleT.current = 0;
+          if (launched.current) {
+            // Tap again while floating -> settle gently back down.
+            launched.current = false;
+            energy.current = 0;
+            pop.current = Math.max(pop.current, 0.3);
+          } else {
+            energy.current += TAP_ENERGY;
+            pop.current = Math.max(pop.current, 0.28); // tiny tick per tap
+            if (energy.current >= 1) {
+              launched.current = true; // it (almost) pops...
+              energy.current = 0;
+              pop.current = 1; // ...with a sharp little squash
+            }
+          }
         }
       }
     }
 
-    // Gentle, critically-damped spring toward the target — smooth, no bounce.
-    chargeVel.current +=
-      (42 * (chargeTo.current - charge.current) - 13 * chargeVel.current) * dt;
-    charge.current += chargeVel.current * dt;
+    // Float height: a slow rise once launched, a slightly quicker settle down.
+    const target = launched.current ? 1 : 0;
+    const rising = target > floatAmt.current;
+    floatAmt.current +=
+      (target - floatAmt.current) * (1 - Math.pow(rising ? 0.5 : 0.16, dt));
 
-    // Soft, slowly-decaying wobble.
-    wobble.current *= Math.exp(-dt * 4);
-    wobbleT.current += dt;
-    const wob = Math.sin(wobbleT.current * 16) * wobble.current;
+    // The pop is a short, sharp impulse that barely lifts but reads as a punch.
+    pop.current *= Math.exp(-dt * 7);
 
     groups.current.forEach((g, i) => {
       const d = i - dispScroll.current;
       const isActive = i === activeRef.current;
-      const lift = isActive ? charge.current * LIFT : 0;
-      const float = isActive ? Math.sin(t * 1.3) * 0.045 * charge.current : 0;
+      // Pop barely moves it vertically; the float carries it slowly upward.
+      const lift = isActive ? floatAmt.current * LIFT + pop.current * 0.1 : 0;
+      const bob = isActive ? Math.sin(t * 1.3) * 0.04 * floatAmt.current : 0;
 
-      g.position.y = d * VSPREAD + lift + float;
+      g.position.y = d * VSPREAD + lift + bob;
       g.rotation.y = BASE_YAW - d * ROT_PER_PAGE + dispAzim.current;
-      g.rotation.z = isActive ? wob * 0.05 : 0;
-      const squash = isActive ? 1 - wob * 0.025 : 1;
-      const widen = isActive ? 1 + wob * 0.015 : 1;
-      g.scale.set(widen, squash, widen);
+      g.rotation.z = 0;
+      const p = isActive ? pop.current : 0;
+      g.scale.set(1 - p * 0.06, 1 + p * 0.1, 1 - p * 0.06);
     });
   });
 
