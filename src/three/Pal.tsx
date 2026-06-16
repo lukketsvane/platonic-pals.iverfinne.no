@@ -47,14 +47,6 @@ export function Pal({ url, height }: Props) {
   return <primitive object={model} />;
 }
 
-useGLTF.preload("/models/pal_01.glb");
-useGLTF.preload("/models/pal_02.glb");
-useGLTF.preload("/models/pal_04.glb");
-useGLTF.preload("/models/pal_05.glb");
-useGLTF.preload("/models/pal_06.glb");
-useGLTF.preload("/models/pal_07.glb");
-useGLTF.preload("/models/pal_08.glb");
-useGLTF.preload("/models/pal_09.glb");
-useGLTF.preload("/models/pal_10.glb");
-useGLTF.preload("/models/pal_11.glb");
-useGLTF.preload("/models/pal_12.glb");
+// NOTE: models are intentionally NOT all preloaded here. They are heavy, and
+// keeping all of them resident crashes iOS Safari on memory. The Scene only
+// mounts a small window of figures and disposes the rest (see Scene.tsx).
