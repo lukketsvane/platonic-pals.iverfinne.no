@@ -7,14 +7,21 @@ import { Scene } from "./three/Scene";
 import { useTheme } from "./three/useTheme";
 import { useGestures } from "./useGestures";
 
-/** Pixelated label showing the figure currently centered. */
-function Label() {
+/** Pixelated editorial HUD: wordmark, index counter, big figure name. */
+function Hud() {
   const scroll = useStore((s) => s.scroll);
   const i = Math.max(0, Math.min(PALS.length - 1, Math.round(scroll)));
+  const pad = (n: number) => String(n).padStart(2, "0");
   return (
-    <div className="label">
-      {PALS[i].name}
-      <span className="sub">platonic pals</span>
+    <div className="hud">
+      <div className="hud-top">PLATONIC&nbsp;PALS</div>
+      <div className="hud-bottom">
+        <div className="hud-idx">
+          {pad(i + 1)}
+          <span>&nbsp;/&nbsp;{pad(PALS.length)}</span>
+        </div>
+        <div className="hud-name">{PALS[i].name}</div>
+      </div>
     </div>
   );
 }
@@ -76,7 +83,7 @@ export default function App() {
         ))}
       </div>
 
-      <Label />
+      <Hud />
       <Veil />
     </>
   );
