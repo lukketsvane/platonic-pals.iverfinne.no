@@ -2,6 +2,7 @@ import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useStore } from "../store";
+import { useTheme } from "./useTheme";
 
 /**
  * A movable rig of real light sources (no environment / IBL). Two-finger drag
@@ -11,6 +12,8 @@ import { useStore } from "../store";
 export function Lights() {
   const rig = useRef<THREE.Group>(null);
   const target = useRef(new THREE.Object3D());
+  // The light theme gets noticeably brighter light.
+  const b = useTheme() === "light" ? 1.4 : 1;
 
   useFrame((_, dt) => {
     const { light } = useStore.getState();
@@ -28,7 +31,7 @@ export function Lights() {
         {/* 1 — Key: the shadow caster. Hard edges via BasicShadowMap. */}
         <directionalLight
           position={[3.4, 6.2, 4.2]}
-          intensity={3.4}
+          intensity={3.4 * b}
           color={"#fff7ec"}
           castShadow
           shadow-mapSize-width={2048}
@@ -45,19 +48,19 @@ export function Lights() {
         {/* 2 — Fill: soft, cool, opposite side to round out the form. */}
         <directionalLight
           position={[-4.6, 2.4, 2.6]}
-          intensity={0.85}
+          intensity={0.85 * b}
           color={"#dfe8ff"}
           target={target.current}
         />
         {/* 3 — Rim: warm, from behind, for crisp separation from the ground. */}
         <directionalLight
           position={[-1.5, 4.2, -5.5]}
-          intensity={1.5}
+          intensity={1.5 * b}
           color={"#fff0dc"}
           target={target.current}
         />
         {/* Faint ambient floor so shadow sides keep some readable detail. */}
-        <ambientLight intensity={0.22} />
+        <ambientLight intensity={0.22 * b} />
       </group>
     </>
   );
