@@ -10,7 +10,8 @@ const VSPREAD = 6.6; // vertical world-distance between consecutive figures
 const ROT_PER_PAGE = Math.PI; // how far a figure turns across one scroll page
 const BASE_YAW = -Math.PI * 0.3; // rest orientation: a 3/4 front view, not side-on
 const LOOK_AT = new THREE.Vector3(0, 1.2, 0); // framing target (figure sits lower)
-const GROUND_Y = -0.6; // floor (and figures) sit lower in the frame
+const GROUND_Y = -0.6; // floor sits lower in the frame
+const MODEL_RAISE = 0.28; // lift each figure slightly off the floor line
 const LIFT = 0.45; // gentle float once popped — small vertical movement
 const TAP_ENERGY = 0.34; // energy added per tap (~3 quick taps to pop)
 const ENERGY_DECAY = 3.0; // energy bleeds away fast, so taps must keep a tempo
@@ -108,7 +109,7 @@ export function Scene() {
       const lift = isActive ? floatAmt.current * LIFT + pop.current * 0.08 : 0;
       const bob = isActive ? Math.sin(t * 1.3) * 0.03 * floatAmt.current : 0;
 
-      g.position.y = GROUND_Y + d * VSPREAD + lift + bob;
+      g.position.y = GROUND_Y + MODEL_RAISE + d * VSPREAD + lift + bob;
       g.rotation.y = BASE_YAW + d * ROT_PER_PAGE + dispAzim.current;
       g.rotation.z = 0;
       const p = isActive ? pop.current : 0;

@@ -9,11 +9,13 @@ export type Pal = {
 };
 
 export const PALS: Pal[] = [
-  { id: "seed", name: "Seed", url: "/models/polypal_seed.glb", height: 1.5 },
-  { id: "cuboid", name: "Cuboid", url: "/models/polypal_cuboid.glb", height: 1.5 },
-  { id: "flywheel", name: "Flywheel", url: "/models/polypal_flywheel.glb", height: 1.5 },
-  { id: "iridescent", name: "Iridescent", url: "/models/polypal_iridescent.glb", height: 1.5 },
-  { id: "neodynium", name: "Neodynium", url: "/models/polypal_neodynium.glb", height: 1.5 },
+  { id: "seed", name: "Seed", url: "/models/polypal_seed.glb", height: 1.8 },
+  { id: "cuboid", name: "Cuboid", url: "/models/polypal_cuboid.glb", height: 1.8 },
+  { id: "flywheel", name: "Flywheel", url: "/models/polypal_flywheel.glb", height: 1.8 },
+  { id: "iridescent", name: "Iridescent", url: "/models/polypal_iridescent.glb", height: 1.8 },
+  { id: "neodynium", name: "Neodynium", url: "/models/polypal_neodynium.glb", height: 1.8 },
+  { id: "juxtaposed", name: "Juxtaposed", url: "/models/polypal_juxtaposed.glb", height: 1.8 },
+  { id: "docu", name: "Docu", url: "/models/polypal_docu.glb", height: 1.8 },
 ];
 
 type State = {
