@@ -35,7 +35,7 @@ export function Lights() {
         {/* 1 — Key: the shadow caster. Hard edges via BasicShadowMap. */}
         <directionalLight
           position={[3.4, 6.2, 4.2]}
-          intensity={3.4 * b}
+          intensity={4.4 * b}
           color={"#fff7ec"}
           castShadow
           shadow-mapSize-width={2048}
@@ -52,19 +52,19 @@ export function Lights() {
         {/* 2 — Fill: soft, cool, opposite side to round out the form. */}
         <directionalLight
           position={[-4.6, 2.4, 2.6]}
-          intensity={0.85 * b}
+          intensity={0.7 * b}
           color={"#dfe8ff"}
           target={target.current}
         />
         {/* 3 — Rim: warm, from behind, for crisp separation from the ground. */}
         <directionalLight
           position={[-1.5, 4.2, -5.5]}
-          intensity={1.5 * b}
+          intensity={2.4 * b}
           color={"#fff0dc"}
           target={target.current}
         />
         {/* Faint ambient floor so shadow sides keep some readable detail. */}
-        <ambientLight intensity={0.22 * b} />
+        <ambientLight intensity={0.16 * b} />
       </group>
     </>
   );
