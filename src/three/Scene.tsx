@@ -292,15 +292,15 @@ function Backdrop() {
           // --- procedural pattern textures (return ink coverage 0..1) -------
           float patDiamond(vec2 p) {
             mat2 R = mat2(0.7071, -0.7071, 0.7071, 0.7071);
-            vec2 e = abs(fract(R * p * 7.0) - 0.5);
-            return max(smoothstep(0.4, 0.5, e.x), smoothstep(0.4, 0.5, e.y));
+            vec2 e = abs(fract(R * p * 14.0) - 0.5);
+            return max(smoothstep(0.42, 0.5, e.x), smoothstep(0.42, 0.5, e.y));
           }
           float patChecker(vec2 p) {
-            vec2 c = floor(p * 6.0);
+            vec2 c = floor(p * 12.0);
             return mod(c.x + c.y, 2.0);
           }
           float patStars(vec2 p, float t) {
-            vec2 cell = p * 5.0;
+            vec2 cell = p * 10.0;
             vec2 id = floor(cell);
             vec2 c = fract(cell) - 0.5;
             float tw = 0.6 + 0.4 * sin(t * 2.0 + hash21(id) * 6.2832);
@@ -311,24 +311,24 @@ function Backdrop() {
             return clamp(smoothstep(rad, rad * 0.35, r) * tw, 0.0, 1.0);
           }
           float patWeb(vec2 p, float t) {
-            vec2 q = p * 4.0;
+            vec2 q = p * 8.0;
             float v = sin(q.x + sin(q.y * 1.3 + t * 0.2))
                     + sin(q.y + sin(q.x * 1.1 - t * 0.15));
             float w = abs(fract(v * 0.5) - 0.5);
             return smoothstep(0.16, 0.04, w);
           }
           float patFan(vec2 p) {
-            vec2 c = p - vec2(0.0, 0.9);
+            vec2 c = p - vec2(0.0, 1.4);
             float ang = atan(c.x, -c.y);
-            return smoothstep(0.4, 0.5, abs(fract(ang * 9.0) - 0.5));
+            return smoothstep(0.42, 0.5, abs(fract(ang * 18.0) - 0.5));
           }
           float patStripes(vec2 p) {
-            float s = abs(fract(p.x * 8.0 + p.y * 2.0) - 0.5);
-            return smoothstep(0.4, 0.5, s);
+            float s = abs(fract(p.x * 16.0 + p.y * 4.0) - 0.5);
+            return smoothstep(0.42, 0.5, s);
           }
           float patDots(vec2 p) {
-            vec2 c = fract(p * 6.0) - 0.5;
-            return smoothstep(0.34, 0.27, length(c));
+            vec2 c = fract(p * 12.0) - 0.5;
+            return smoothstep(0.36, 0.28, length(c));
           }
 
           float patternInk(float id, vec2 p, float t) {
