@@ -1,13 +1,19 @@
 :root {
   /* Theme is driven purely by the device / system setting. */
   color-scheme: light dark;
-  --bg: #ffffff;
+  /* Backdrop is a section-blended gradient set from JS (useBackdrop). These are
+     just soft, never-pure fallbacks for the first frame / no-JS. */
+  --bg-top: #f4f5f7;
+  --bg-bottom: #e8eaef;
+  --bg: #e8eaef;
   --fg: #000000;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #000000;
+    --bg-top: #0c0c10;
+    --bg-bottom: #050507;
+    --bg: #050507;
     --fg: #ffffff;
   }
 }
@@ -44,7 +50,8 @@ body {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background: var(--bg);
+  /* Soft vertical gradient that blends between section accents (set from JS). */
+  background: linear-gradient(165deg, var(--bg-top), var(--bg-bottom));
   touch-action: none;
 }
 
