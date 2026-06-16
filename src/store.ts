@@ -16,6 +16,10 @@ export const PALS: Pal[] = [
   { id: "pal_06", name: "Pal 06", url: "/models/pal_06.glb", height: 1.5 },
   { id: "pal_07", name: "Pal 07", url: "/models/pal_07.glb", height: 1.5 },
   { id: "pal_08", name: "Pal 08", url: "/models/pal_08.glb", height: 1.5 },
+  { id: "pal_09", name: "Pal 09", url: "/models/pal_09.glb", height: 1.5 },
+  { id: "pal_10", name: "Pal 10", url: "/models/pal_10.glb", height: 1.5 },
+  { id: "pal_11", name: "Pal 11", url: "/models/pal_11.glb", height: 1.5 },
+  { id: "pal_12", name: "Pal 12", url: "/models/pal_12.glb", height: 1.5 },
 ];
 
 type State = {
