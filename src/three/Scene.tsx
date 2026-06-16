@@ -1,14 +1,15 @@
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
+import { useGLTF, Sparkles } from "@react-three/drei";
 import * as THREE from "three";
 import { PALS, useStore } from "../store";
 import { Pal } from "./Pal";
 import { Lights } from "./Lights";
+import { useTheme } from "./useTheme";
 
 const VSPREAD = 6.6; // vertical world-distance between consecutive figures
-const ROT_PER_PAGE = Math.PI; // how far a figure turns across one scroll page
-const BASE_YAW = -Math.PI * 0.3; // rest orientation: a 3/4 front view, not side-on
+const ROT_PER_PAGE = Math.PI * 2; // exactly one full turn per scroll page
+const BASE_YAW = -Math.PI * 0.3 - Math.PI / 3; // rest orientation, +60° from before
 const LOOK_AT = new THREE.Vector3(0, 1.2, 0); // framing target (figure sits lower)
 const GROUND_Y = -0.6; // floor sits lower in the frame
 const MODEL_RAISE = 0.28; // lift each figure slightly off the floor line
@@ -24,6 +25,7 @@ export function Scene() {
   // pile up in GPU memory (which crashes iOS Safari). `active` drives it.
   const [active, setActive] = useState(0);
   const activeRef = useRef(0);
+  const glitter = useTheme() === "dark" ? "#ffffff" : "#000000";
 
   const groups = useRef(new Map<number, THREE.Group>());
   const dispScroll = useRef(0);
@@ -126,6 +128,17 @@ export function Scene() {
   return (
     <>
       <Lights />
+
+      {/* Subtle glitter drifting around the figure. */}
+      <Sparkles
+        count={50}
+        position={[0, GROUND_Y + 1.4, 0]}
+        scale={[6, 7, 6]}
+        size={5}
+        speed={0.3}
+        opacity={0.7}
+        color={glitter}
+      />
 
       {/* Shadow-only floor: no tone/value on the ground, just the hard shadow. */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, GROUND_Y, 0]} receiveShadow>

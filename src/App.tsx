@@ -2,10 +2,22 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useProgress } from "@react-three/drei";
 import * as THREE from "three";
-import { PALS } from "./store";
+import { PALS, useStore } from "./store";
 import { Scene } from "./three/Scene";
 import { useTheme } from "./three/useTheme";
 import { useGestures } from "./useGestures";
+
+/** Pixelated label showing the figure currently centered. */
+function Label() {
+  const scroll = useStore((s) => s.scroll);
+  const i = Math.max(0, Math.min(PALS.length - 1, Math.round(scroll)));
+  return (
+    <div className="label">
+      {PALS[i].name}
+      <span className="sub">platonic pals</span>
+    </div>
+  );
+}
 
 function Veil() {
   const { active } = useProgress();
@@ -64,6 +76,7 @@ export default function App() {
         ))}
       </div>
 
+      <Label />
       <Veil />
     </>
   );

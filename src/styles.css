@@ -78,6 +78,31 @@ body {
   pointer-events: none;
 }
 
+/* Pixelated typography overlay — the active figure's name. */
+.label {
+  position: fixed;
+  left: calc(env(safe-area-inset-left, 0px) + 18px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 20px);
+  z-index: 3;
+  pointer-events: none;
+  font-family: "Silkscreen", monospace;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg);
+  opacity: 0.7;
+}
+
+.label .sub {
+  display: block;
+  font-weight: 400;
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  opacity: 0.55;
+  margin-top: 5px;
+}
+
 /* Minimal loading veil — pure background, nothing else. */
 .veil {
   position: fixed;
