@@ -10,7 +10,8 @@ const VSPREAD = 6.6; // vertical world-distance between consecutive figures
 const ROT_PER_PAGE = Math.PI; // how far a figure turns across one scroll page
 const BASE_YAW = -Math.PI * 0.3; // rest orientation: a 3/4 front view, not side-on
 const LOOK_AT = new THREE.Vector3(0, 1.2, 0); // framing target (figure sits lower)
-const LIFT = 0.9; // how high the figure ends up gently floating
+const GROUND_Y = -0.6; // floor (and figures) sit lower in the frame
+const LIFT = 0.45; // gentle float once popped — small vertical movement
 const TAP_ENERGY = 0.34; // energy added per tap (~3 quick taps to pop)
 const ENERGY_DECAY = 3.0; // energy bleeds away fast, so taps must keep a tempo
 const WINDOW = 1; // figures kept alive on each side of the active one
@@ -99,14 +100,16 @@ export function Scene() {
     pop.current *= Math.exp(-dt * 7);
 
     groups.current.forEach((g, i) => {
-      const d = i - dispScroll.current;
+      // d > 0 once scrolled past: figure rises and exits the top while the next
+      // enters from below — i.e. normal scrolling.
+      const d = dispScroll.current - i;
       const isActive = i === activeRef.current;
       // Pop barely moves it vertically; the float carries it slowly upward.
-      const lift = isActive ? floatAmt.current * LIFT + pop.current * 0.1 : 0;
-      const bob = isActive ? Math.sin(t * 1.3) * 0.04 * floatAmt.current : 0;
+      const lift = isActive ? floatAmt.current * LIFT + pop.current * 0.08 : 0;
+      const bob = isActive ? Math.sin(t * 1.3) * 0.03 * floatAmt.current : 0;
 
-      g.position.y = d * VSPREAD + lift + bob;
-      g.rotation.y = BASE_YAW - d * ROT_PER_PAGE + dispAzim.current;
+      g.position.y = GROUND_Y + d * VSPREAD + lift + bob;
+      g.rotation.y = BASE_YAW + d * ROT_PER_PAGE + dispAzim.current;
       g.rotation.z = 0;
       const p = isActive ? pop.current : 0;
       g.scale.set(1 - p * 0.06, 1 + p * 0.1, 1 - p * 0.06);
@@ -124,7 +127,7 @@ export function Scene() {
       <Lights />
 
       {/* Shadow-only floor: no tone/value on the ground, just the hard shadow. */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, GROUND_Y, 0]} receiveShadow>
         <planeGeometry args={[80, 80]} />
         <shadowMaterial transparent opacity={0.34} color="#000000" />
       </mesh>

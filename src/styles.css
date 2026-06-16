@@ -48,6 +48,14 @@ body {
   touch-action: none;
 }
 
+/* Constant pixelation: the canvas renders at 1/4 resolution and is upscaled
+   to fill the screen with crisp nearest-neighbor pixels. */
+.stage canvas {
+  image-rendering: pixelated;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
 /* Native vertical paging lives in this scroll layer above the canvas. */
 .scroller {
   position: fixed;

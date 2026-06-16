@@ -41,9 +41,9 @@ export default function App() {
       <div className="stage">
         <Canvas
           shadows="basic"
-          dpr={[1, 2]}
+          dpr={0.25}
           gl={{
-            antialias: true,
+            antialias: false,
             toneMapping: THREE.ACESFilmicToneMapping,
             toneMappingExposure: 1.25,
             powerPreference: "high-performance",
