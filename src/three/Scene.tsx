@@ -278,14 +278,15 @@ function Backdrop() {
           float hash21(vec2 p) {
             p = fract(p * vec2(123.34, 345.45));
             p += dot(p, p + 34.345);
-            return fract(p.x * p.y);
+            return clamp(fract(p.x * p.y), 0.02, 0.98);
           }
 
           float bayer4x4(vec2 p) {
             vec2 t = floor(mod(p, 4.0));
-            return (mod(t.x, 2.0) * 8.0 + mod(t.y, 2.0) * 4.0
-                  + mod(floor(t.x / 2.0), 2.0) * 2.0
-                  + mod(floor(t.y / 2.0), 2.0)) / 16.0;
+            float v = mod(t.x, 2.0) * 8.0 + mod(t.y, 2.0) * 4.0
+                    + mod(floor(t.x / 2.0), 2.0) * 2.0
+                    + mod(floor(t.y / 2.0), 2.0);
+            return (v + 0.5) / 16.0; // strictly inside (0,1) so f=0 reveals nothing
           }
 
           // --- procedural pattern textures (return ink coverage 0..1) -------
@@ -345,22 +346,25 @@ function Backdrop() {
           }
 
           // Animated, pixelated dither threshold; style varies per boundary.
+          // A deadzone keeps settled sections perfectly clean — the dissolve
+          // only plays across the middle of a scroll.
           float transition(vec2 px, float f, float style, float t) {
-            float blk = mix(2.0, 11.0, sin(clamp(f, 0.0, 1.0) * 3.14159));
+            float ff = clamp((f - 0.08) / 0.84, 0.0, 1.0);
+            float blk = mix(2.0, 11.0, sin(ff * 3.14159));
             vec2 cell = floor(px / blk);
             float s = mod(style, 4.0);
+            float th;
             if (s < 0.5) {
-              return step(bayer4x4(cell + floor(t * 10.0)), f);
+              th = bayer4x4(cell + floor(t * 10.0));
             } else if (s < 1.5) {
-              return step(hash21(cell + floor(t * 8.0)), f);
+              th = hash21(cell + floor(t * 8.0));
             } else if (s < 2.5) {
-              float th = clamp(px.y / uRes.y + (hash21(cell) - 0.5) * 0.3, 0.0, 1.0);
-              return step(th, f);
+              th = clamp(px.y / uRes.y + (hash21(cell) - 0.5) * 0.3, 0.03, 0.97);
             } else {
-              float th = clamp((px.x + px.y) / (uRes.x + uRes.y)
-                       + (bayer4x4(cell) - 0.5) * 0.45, 0.0, 1.0);
-              return step(th, f);
+              th = clamp((px.x + px.y) / (uRes.x + uRes.y)
+                 + (bayer4x4(cell) - 0.5) * 0.45, 0.03, 0.97);
             }
+            return step(th, ff);
           }
 
           void main() {
