@@ -12,6 +12,10 @@ export type Pal = {
    * its own pairing (the opposite of the model's palette).
    */
   accent: string;
+  /** Procedural background texture for this section (see Backdrop in Scene). */
+  pattern: number; // 0 diamond · 1 checker · 2 stars · 3 web · 4 fan · 5 stripes · 6 dots
+  bgBase: string; // bold field colour
+  bgInk: string; // pattern colour drawn over the field
 };
 
 // Figures are normalized to a common height; 2.34 ≈ 30% larger than the old 1.8.
@@ -19,19 +23,19 @@ const H = 2.34;
 
 export const PALS: Pal[] = [
   // Olive-green pod      -> magenta
-  { id: "seed", name: "Seed", url: "/models/polypal_seed.glb", height: H, accent: "#e01f9b" },
+  { id: "seed", name: "Seed", url: "/models/polypal_seed.glb", height: H, accent: "#e01f9b", pattern: 0, bgBase: "#ff2d9e", bgInk: "#eaff66" },
   // Cool grey blocks     -> warm orange
-  { id: "cuboid", name: "Cuboid", url: "/models/polypal_cuboid.glb", height: H, accent: "#ff5a1f" },
+  { id: "cuboid", name: "Cuboid", url: "/models/polypal_cuboid.glb", height: H, accent: "#ff5a1f", pattern: 1, bgBase: "#ff6a00", bgInk: "#2a1500" },
   // Navy-blue flywheel   -> golden amber
-  { id: "flywheel", name: "Astrolabium", url: "/models/polypal_flywheel.glb", height: H, accent: "#ffb300" },
+  { id: "flywheel", name: "Astrolabium", url: "/models/polypal_flywheel.glb", height: H, accent: "#ffb300", pattern: 2, bgBase: "#2f6bff", bgInk: "#ffffff" },
   // Dark iridescent      -> electric cyan
-  { id: "iridescent", name: "Iridescent", url: "/models/polypal_iridescent.glb", height: H, accent: "#00e5ff" },
+  { id: "iridescent", name: "Iridescent", url: "/models/polypal_iridescent.glb", height: H, accent: "#00e5ff", pattern: 3, bgBase: "#b06cff", bgInk: "#e9b44c" },
   // Graphite metal       -> crimson
-  { id: "neodynium", name: "Neodynium", url: "/models/polypal_neodynium.glb", height: H, accent: "#ff2d4f" },
+  { id: "neodynium", name: "Neodynium", url: "/models/polypal_neodynium.glb", height: H, accent: "#ff2d4f", pattern: 4, bgBase: "#8a3b2a", bgInk: "#f2e9e0" },
   // Mixed tones          -> vivid violet
-  { id: "juxtaposed", name: "Juxtaposed", url: "/models/polypal_juxtaposed.glb", height: H, accent: "#7b5cff" },
+  { id: "juxtaposed", name: "Juxtaposed", url: "/models/polypal_juxtaposed.glb", height: H, accent: "#7b5cff", pattern: 5, bgBase: "#6a3df0", bgInk: "#d6ff3b" },
   // Neutral paper        -> lime
-  { id: "docu", name: "Docu", url: "/models/polypal_docu.glb", height: H, accent: "#6ee63c" },
+  { id: "docu", name: "Docu", url: "/models/polypal_docu.glb", height: H, accent: "#6ee63c", pattern: 6, bgBase: "#19c37d", bgInk: "#04241a" },
 ];
 
 type State = {

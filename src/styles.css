@@ -94,6 +94,13 @@ body {
   color: var(--fg);
   font-family: "Silkscreen", monospace;
   text-transform: uppercase;
+  /* Keep the HUD legible over the bold patterned backdrop. */
+  mix-blend-mode: difference;
+}
+
+.hud-top,
+.hud-bottom {
+  color: #ffffff;
 }
 
 .hud-top {

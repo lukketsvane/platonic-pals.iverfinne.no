@@ -195,6 +195,190 @@ const WINDOW = 1; // figures kept alive on each side of the active one
 // list loops); this folds any index back onto a real figure.
 const wrap = (i: number) => ((i % PALS.length) + PALS.length) % PALS.length;
 
+/**
+ * Fullscreen procedural background. Each section has its own bold patterned
+ * texture (diamond lattice, checker, starburst grid, gold web, radiating fan,
+ * stripes, dots) painted in strong colours. As you scroll between two sections
+ * the textures cross-dissolve with an animated, pixelated dithering — and the
+ * dither style itself changes per boundary, so every transition looks
+ * different. Drawn as a clip-space quad behind the figures (no depth).
+ */
+function Backdrop() {
+  const mat = useRef<THREE.ShaderMaterial>(null);
+  const { gl } = useThree();
+  const res = useMemo(() => new THREE.Vector2(1, 1), []);
+
+  const uniforms = useMemo(
+    () => ({
+      uTime: { value: 0 },
+      uRes: { value: new THREE.Vector2(1, 1) },
+      uF: { value: 0 },
+      uBoundary: { value: 0 },
+      uPatA: { value: 0 },
+      uPatB: { value: 0 },
+      uBaseA: { value: new THREE.Color() },
+      uInkA: { value: new THREE.Color() },
+      uBaseB: { value: new THREE.Color() },
+      uInkB: { value: new THREE.Color() },
+    }),
+    []
+  );
+
+  useFrame((state) => {
+    const m = mat.current;
+    if (!m) return;
+    const sc = useStore.getState().scroll;
+    const fl = Math.floor(sc);
+    const f = sc - fl;
+    const A = wrap(fl);
+    const B = wrap(fl + 1);
+    const u = m.uniforms;
+    u.uTime.value = state.clock.elapsedTime;
+    u.uF.value = f;
+    u.uBoundary.value = A;
+    u.uPatA.value = PALS[A].pattern;
+    u.uPatB.value = PALS[B].pattern;
+    u.uBaseA.value.set(PALS[A].bgBase);
+    u.uInkA.value.set(PALS[A].bgInk);
+    u.uBaseB.value.set(PALS[B].bgBase);
+    u.uInkB.value.set(PALS[B].bgInk);
+    gl.getDrawingBufferSize(res);
+    u.uRes.value.copy(res);
+  });
+
+  return (
+    <mesh renderOrder={-1000} frustumCulled={false}>
+      <planeGeometry args={[2, 2]} />
+      <shaderMaterial
+        ref={mat}
+        uniforms={uniforms}
+        depthTest={false}
+        depthWrite={false}
+        vertexShader={`
+          varying vec2 vUv;
+          void main() {
+            vUv = position.xy * 0.5 + 0.5;
+            gl_Position = vec4(position.xy, 0.0, 1.0);
+          }
+        `}
+        fragmentShader={`
+          precision mediump float;
+          uniform float uTime;
+          uniform vec2 uRes;
+          uniform float uF;
+          uniform float uBoundary;
+          uniform float uPatA;
+          uniform float uPatB;
+          uniform vec3 uBaseA;
+          uniform vec3 uInkA;
+          uniform vec3 uBaseB;
+          uniform vec3 uInkB;
+          varying vec2 vUv;
+
+          float hash21(vec2 p) {
+            p = fract(p * vec2(123.34, 345.45));
+            p += dot(p, p + 34.345);
+            return fract(p.x * p.y);
+          }
+
+          float bayer4x4(vec2 p) {
+            vec2 t = floor(mod(p, 4.0));
+            return (mod(t.x, 2.0) * 8.0 + mod(t.y, 2.0) * 4.0
+                  + mod(floor(t.x / 2.0), 2.0) * 2.0
+                  + mod(floor(t.y / 2.0), 2.0)) / 16.0;
+          }
+
+          // --- procedural pattern textures (return ink coverage 0..1) -------
+          float patDiamond(vec2 p) {
+            mat2 R = mat2(0.7071, -0.7071, 0.7071, 0.7071);
+            vec2 e = abs(fract(R * p * 7.0) - 0.5);
+            return max(smoothstep(0.4, 0.5, e.x), smoothstep(0.4, 0.5, e.y));
+          }
+          float patChecker(vec2 p) {
+            vec2 c = floor(p * 6.0);
+            return mod(c.x + c.y, 2.0);
+          }
+          float patStars(vec2 p, float t) {
+            vec2 cell = p * 5.0;
+            vec2 id = floor(cell);
+            vec2 c = fract(cell) - 0.5;
+            float tw = 0.6 + 0.4 * sin(t * 2.0 + hash21(id) * 6.2832);
+            float ang = atan(c.y, c.x);
+            float r = length(c);
+            float spike = pow(abs(cos(ang * 4.0)), 6.0);
+            float rad = 0.05 + 0.34 * spike;
+            return clamp(smoothstep(rad, rad * 0.35, r) * tw, 0.0, 1.0);
+          }
+          float patWeb(vec2 p, float t) {
+            vec2 q = p * 4.0;
+            float v = sin(q.x + sin(q.y * 1.3 + t * 0.2))
+                    + sin(q.y + sin(q.x * 1.1 - t * 0.15));
+            float w = abs(fract(v * 0.5) - 0.5);
+            return smoothstep(0.16, 0.04, w);
+          }
+          float patFan(vec2 p) {
+            vec2 c = p - vec2(0.0, 0.9);
+            float ang = atan(c.x, -c.y);
+            return smoothstep(0.4, 0.5, abs(fract(ang * 9.0) - 0.5));
+          }
+          float patStripes(vec2 p) {
+            float s = abs(fract(p.x * 8.0 + p.y * 2.0) - 0.5);
+            return smoothstep(0.4, 0.5, s);
+          }
+          float patDots(vec2 p) {
+            vec2 c = fract(p * 6.0) - 0.5;
+            return smoothstep(0.34, 0.27, length(c));
+          }
+
+          float patternInk(float id, vec2 p, float t) {
+            if (id < 0.5) return patDiamond(p);
+            else if (id < 1.5) return patChecker(p);
+            else if (id < 2.5) return patStars(p, t);
+            else if (id < 3.5) return patWeb(p, t);
+            else if (id < 4.5) return patFan(p);
+            else if (id < 5.5) return patStripes(p);
+            else return patDots(p);
+          }
+
+          vec3 sectionColor(float id, vec3 base, vec3 ink, vec2 p, float t) {
+            return mix(base, ink, clamp(patternInk(id, p, t), 0.0, 1.0));
+          }
+
+          // Animated, pixelated dither threshold; style varies per boundary.
+          float transition(vec2 px, float f, float style, float t) {
+            float blk = mix(2.0, 11.0, sin(clamp(f, 0.0, 1.0) * 3.14159));
+            vec2 cell = floor(px / blk);
+            float s = mod(style, 4.0);
+            if (s < 0.5) {
+              return step(bayer4x4(cell + floor(t * 10.0)), f);
+            } else if (s < 1.5) {
+              return step(hash21(cell + floor(t * 8.0)), f);
+            } else if (s < 2.5) {
+              float th = clamp(px.y / uRes.y + (hash21(cell) - 0.5) * 0.3, 0.0, 1.0);
+              return step(th, f);
+            } else {
+              float th = clamp((px.x + px.y) / (uRes.x + uRes.y)
+                       + (bayer4x4(cell) - 0.5) * 0.45, 0.0, 1.0);
+              return step(th, f);
+            }
+          }
+
+          void main() {
+            vec2 p = vUv - 0.5;
+            p.x *= uRes.x / uRes.y;
+            vec2 px = vUv * uRes;
+            float t = uTime;
+            vec3 colA = sectionColor(uPatA, uBaseA, uInkA, p, t);
+            vec3 colB = sectionColor(uPatB, uBaseB, uInkB, p, t);
+            float m = transition(px, uF, uBoundary, t);
+            gl_FragColor = vec4(mix(colA, colB, m), 1.0);
+          }
+        `}
+      />
+    </mesh>
+  );
+}
+
 export function Scene() {
   // Only a small window of figures is ever mounted, so the heavy models never
   // pile up in GPU memory (which crashes iOS Safari). `active` drives it and is
@@ -313,6 +497,9 @@ export function Scene() {
 
   return (
     <>
+      {/* Bold patterned background that dither-dissolves between sections. */}
+      <Backdrop />
+
       <Lights />
 
       {/* Wind-blown pixel glitter; bold dithered accent in light mode. */}
