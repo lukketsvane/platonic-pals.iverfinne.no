@@ -1,11 +1,81 @@
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useGLTF, Sparkles } from "@react-three/drei";
+import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { PALS, useStore } from "../store";
 import { Pal } from "./Pal";
 import { Lights } from "./Lights";
 import { useTheme } from "./useTheme";
+
+/**
+ * Crisp, square, twinkling pixel glitter — no soft sprites, no blur, so it
+ * matches the pixelated render. Drawn with constant screen-size GL points.
+ */
+function Glitter({ color }: { color: string }) {
+  const COUNT = 70;
+  const mat = useRef<THREE.ShaderMaterial>(null);
+
+  const geometry = useMemo(() => {
+    const pos = new Float32Array(COUNT * 3);
+    const phase = new Float32Array(COUNT);
+    const size = new Float32Array(COUNT);
+    for (let i = 0; i < COUNT; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * 5.5;
+      pos[i * 3 + 1] = -0.4 + Math.random() * 3.6;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 4;
+      phase[i] = Math.random() * Math.PI * 2;
+      size[i] = 1 + Math.floor(Math.random() * 3); // 1..3 px squares
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    g.setAttribute("aPhase", new THREE.BufferAttribute(phase, 1));
+    g.setAttribute("aSize", new THREE.BufferAttribute(size, 1));
+    return g;
+  }, []);
+
+  const uniforms = useMemo(
+    () => ({ uTime: { value: 0 }, uColor: { value: new THREE.Color(color) } }),
+    []
+  );
+
+  useFrame((s) => {
+    if (mat.current) {
+      mat.current.uniforms.uTime.value = s.clock.elapsedTime;
+      mat.current.uniforms.uColor.value.set(color);
+    }
+  });
+
+  return (
+    <points geometry={geometry} frustumCulled={false}>
+      <shaderMaterial
+        ref={mat}
+        transparent
+        depthWrite={false}
+        uniforms={uniforms}
+        vertexShader={`
+          attribute float aPhase;
+          attribute float aSize;
+          uniform float uTime;
+          varying float vTw;
+          void main() {
+            vTw = 0.5 + 0.5 * sin(uTime * 2.2 + aPhase);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            gl_PointSize = aSize;
+          }
+        `}
+        fragmentShader={`
+          uniform vec3 uColor;
+          varying float vTw;
+          void main() {
+            float a = smoothstep(0.45, 1.0, vTw); // some twinkle fully off
+            if (a < 0.05) discard;
+            gl_FragColor = vec4(uColor, a * 0.9);
+          }
+        `}
+      />
+    </points>
+  );
+}
 
 const VSPREAD = 6.6; // vertical world-distance between consecutive figures
 const ROT_PER_PAGE = Math.PI * 2; // exactly one full turn per scroll page
@@ -129,16 +199,8 @@ export function Scene() {
     <>
       <Lights />
 
-      {/* Subtle glitter drifting around the figure. */}
-      <Sparkles
-        count={50}
-        position={[0, GROUND_Y + 1.4, 0]}
-        scale={[6, 7, 6]}
-        size={5}
-        speed={0.3}
-        opacity={0.7}
-        color={glitter}
-      />
+      {/* Crisp pixel glitter — no blur. */}
+      <Glitter color={glitter} />
 
       {/* Shadow-only floor: no tone/value on the ground, just the hard shadow. */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, GROUND_Y, 0]} receiveShadow>
