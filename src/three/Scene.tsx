@@ -394,26 +394,41 @@ function Backdrop() {
             return mix(base, ink, clamp(patternInk(id, p, t), 0.0, 1.0));
           }
 
-          // Animated, pixelated dither threshold; style varies per boundary.
-          // A deadzone keeps settled sections perfectly clean — the dissolve
-          // only plays across the middle of a scroll.
+          // Animated, pixelated dither threshold; the style varies per
+          // boundary so every section change dissolves differently. Each style
+          // is fully discrete/pixelated (everything is quantized to blocks and
+          // dithered), yet the threshold rises smoothly with the scroll, so it
+          // reads as a smooth graded reveal. A deadzone keeps settled sections
+          // perfectly clean — the dissolve only plays across the middle.
           float transition(vec2 px, float f, float style, float t) {
             float ff = clamp((f - 0.08) / 0.84, 0.0, 1.0);
-            float blk = mix(2.0, 11.0, sin(ff * 3.14159));
+            float blk = mix(2.0, 9.0, sin(ff * 3.14159)); // pixelation pulse
             vec2 cell = floor(px / blk);
-            float s = mod(style, 4.0);
+            vec2 pxq = cell * blk;                         // block-quantized px
+            float dith = bayer4x4(cell + floor(t * 9.0));  // animated fine dither
+            float jit = (dith - 0.5) * 0.45;               // dithered edges
+            float s = mod(style, 8.0);
             float th;
             if (s < 0.5) {
-              th = bayer4x4(cell + floor(t * 10.0));
+              th = dith;                                          // ordered field
             } else if (s < 1.5) {
-              th = hash21(cell + floor(t * 8.0));
+              th = hash21(cell + floor(t * 7.0));                 // random dissolve
             } else if (s < 2.5) {
-              th = clamp(px.y / uRes.y + (hash21(cell) - 0.5) * 0.3, 0.03, 0.97);
+              th = fract(pxq.x / 46.0) * 0.8 + jit;               // vertical blinds
+            } else if (s < 3.5) {
+              th = fract(pxq.y / 46.0) * 0.8 + jit;               // horizontal blinds
+            } else if (s < 4.5) {
+              th = fract((pxq.x + pxq.y) / 64.0) * 0.8 + jit;     // diagonal blinds
+            } else if (s < 5.5) {
+              th = (pxq.y / uRes.y) * 0.8 + 0.1 + jit;            // vertical sweep
+            } else if (s < 6.5) {
+              vec2 c = pxq / uRes - 0.5; c.x *= uRes.x / uRes.y;
+              th = length(c) * 1.3 * 0.85 + jit;                  // radial burst
             } else {
-              th = clamp((px.x + px.y) / (uRes.x + uRes.y)
-                 + (bayer4x4(cell) - 0.5) * 0.45, 0.03, 0.97);
+              vec2 q = floor(px / (blk * 3.0));                   // big-cell checker
+              th = mix(bayer4x4(q), fract((q.x + q.y) * 0.5 + 0.25), 0.5);
             }
-            return step(th, ff);
+            return step(clamp(th, 0.02, 0.98), ff);
           }
 
           void main() {
