@@ -8,21 +8,21 @@ import { Lights } from "./Lights";
 import { useTheme } from "./useTheme";
 
 /**
- * Crisp, square pixel glitter that matches the pixelated render.
+ * Subtle, motion-driven spark dust that matches the pixelated render.
  *
- *  - Particles are pushed around by a soft, gusty "wind" — a slow ambient
- *    breeze plus a kick whenever the figure is orbited or scrolled, then they
- *    wrap around a bounding box so the field never drains.
- *  - Each particle blinks on a fast cycle, so specks appear and disappear very
- *    quickly rather than smoothly twinkling.
+ *  - At rest the field is almost empty. Movement (scrolling or orbiting) raises
+ *    an `energy` level; the faster you move, the more sparks cross their
+ *    threshold and flicker to life — then it bleeds away and they settle.
+ *  - Each spark drifts slowly like floating dust, with a small kick in the
+ *    direction of motion that eases back to a gentle ambient sway.
  *  - In light mode the colour is the section's bold complementary accent and
- *    the alpha is resolved with an animated ordered-dither (a crawling Bayer
- *    matrix), giving a shimmering halftone instead of a flat tint.
+ *    the alpha is resolved with an animated ordered (Bayer) dither.
  */
 function Glitter({ color, light }: { color: string; light: boolean }) {
-  const COUNT = 90;
+  const COUNT = 140;
   const mat = useRef<THREE.ShaderMaterial>(null);
-  const wind = useRef(new THREE.Vector2(0, 0));
+  const drift = useRef(new THREE.Vector2(0, 0)); // transient motion kick
+  const energy = useRef(0); // 0..1 how "stirred up" the dust is
   const prevAz = useRef(0);
   const prevScroll = useRef(0);
 
@@ -32,14 +32,16 @@ function Glitter({ color, light }: { color: string; light: boolean }) {
     const size = new Float32Array(COUNT);
     const rate = new Float32Array(COUNT);
     const seed = new Float32Array(COUNT);
+    const thresh = new Float32Array(COUNT);
     for (let i = 0; i < COUNT; i++) {
       pos[i * 3] = (Math.random() - 0.5) * 5.5;
       pos[i * 3 + 1] = -0.4 + Math.random() * 3.6;
       pos[i * 3 + 2] = (Math.random() - 0.5) * 4;
       phase[i] = Math.random();
-      size[i] = 1 + Math.floor(Math.random() * 3); // 1..3 px squares
-      rate[i] = 2.5 + Math.random() * 5.5; // fast blink, ~2.5..8 Hz
+      size[i] = 1 + Math.floor(Math.random() * 2); // 1..2 px sparks
+      rate[i] = 0.5 + Math.random() * 1.1; // slow, dusty fade in/out
       seed[i] = Math.random();
+      thresh[i] = Math.random(); // movement level needed to wake this spark
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
@@ -47,6 +49,7 @@ function Glitter({ color, light }: { color: string; light: boolean }) {
     g.setAttribute("aSize", new THREE.BufferAttribute(size, 1));
     g.setAttribute("aRate", new THREE.BufferAttribute(rate, 1));
     g.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
+    g.setAttribute("aThresh", new THREE.BufferAttribute(thresh, 1));
     return g;
   }, []);
 
@@ -54,7 +57,8 @@ function Glitter({ color, light }: { color: string; light: boolean }) {
     () => ({
       uTime: { value: 0 },
       uColor: { value: new THREE.Color(color) },
-      uWind: { value: new THREE.Vector2(0, 0) },
+      uDrift: { value: new THREE.Vector2(0, 0) },
+      uEnergy: { value: 0 },
       uLight: { value: light ? 1 : 0 },
     }),
     []
@@ -65,29 +69,33 @@ function Glitter({ color, light }: { color: string; light: boolean }) {
   useFrame((s, dt) => {
     const st = useStore.getState();
     const t = s.clock.elapsedTime;
+    const h = Math.max(dt, 1 / 120);
 
-    // Wind = a slow, gusty ambient breeze, plus a kick from orbiting/scrolling.
+    // How fast is the figure being moved this frame (orbit + scroll)?
     const dAz = st.azimuth - prevAz.current;
     prevAz.current = st.azimuth;
     let dSc = st.scroll - prevScroll.current;
     prevScroll.current = st.scroll;
     if (Math.abs(dSc) > 1) dSc = 0; // ignore the loop teleport's big jump
+    const speed = (Math.abs(dAz) + Math.abs(dSc)) / h;
 
-    const breeze = Math.sin(t * 0.27) + 0.6 * Math.sin(t * 0.11 + 1.3);
-    const vx = breeze * 0.22 + dAz * 3.5; // orbit drags the air sideways
-    const vy = -dSc * 1.5 + Math.sin(t * 0.4) * 0.06;
-    wind.current.x += vx * dt;
-    wind.current.y += vy * dt;
-    // Keep the accumulator inside one wrap period so it never grows unbounded.
-    const PX = 5.5; // == 2 * BOUND.x in the shader
-    const PY = 4.0; // == 2 * BOUND.y in the shader
-    wind.current.x = ((wind.current.x % PX) + PX) % PX;
-    wind.current.y = ((wind.current.y % PY) + PY) % PY;
+    // Energy rises quickly with motion, then bleeds away so the dust settles.
+    const tgt = Math.min(1, speed * 0.45);
+    const k = tgt > energy.current ? 1 - Math.pow(0.0004, dt) : 1 - Math.pow(0.25, dt);
+    energy.current += (tgt - energy.current) * k;
+
+    // A small kick in the direction of motion that eases back toward rest.
+    drift.current.x += dAz * 1.6;
+    drift.current.y += -dSc * 0.6;
+    const ease = Math.pow(0.05, dt);
+    drift.current.x *= ease;
+    drift.current.y *= ease;
 
     if (mat.current) {
       const u = mat.current.uniforms;
       u.uTime.value = t;
-      u.uWind.value.copy(wind.current);
+      u.uEnergy.value = energy.current;
+      u.uDrift.value.copy(drift.current);
       u.uLight.value = light ? 1 : 0;
       // Ease between section accents instead of snapping.
       target.set(color);
@@ -107,28 +115,29 @@ function Glitter({ color, light }: { color: string; light: boolean }) {
           attribute float aSize;
           attribute float aRate;
           attribute float aSeed;
+          attribute float aThresh;
           uniform float uTime;
-          uniform vec2 uWind;
+          uniform vec2 uDrift;
+          uniform float uEnergy;
           uniform float uLight;
           varying float vVis;
           void main() {
             vec3 BOUND = vec3(2.75, 2.0, 2.0);
             vec3 ORIG  = vec3(0.0, 1.4, 0.0);
             vec3 p = position;
-            // Per-particle turbulence so the breeze never looks uniform.
-            p.x += sin(uTime * 0.9 + aSeed * 30.0) * 0.16;
-            p.y += sin(uTime * 0.7 + aSeed * 22.0) * 0.10;
-            // Wind drift, then wrap inside the box so the field stays full.
-            p.x += uWind.x;
-            p.y += uWind.y;
+            // Slow dust float: gentle ambient sway + the motion kick.
+            p.x += sin(uTime * 0.5 + aSeed * 40.0) * 0.22 + uDrift.x;
+            p.y += cos(uTime * 0.42 + aSeed * 33.0) * 0.16 + uDrift.y;
             vec3 rel = mod(p - ORIG + BOUND, 2.0 * BOUND);
             p = rel - BOUND + ORIG;
-            // Very quick appear / disappear: a short visible window per cycle.
+            // Wake only the sparks whose threshold the current energy clears.
+            float alive = smoothstep(aThresh, aThresh + 0.2, uEnergy);
+            // Soft, dusty flicker (not a hard blink).
             float c = fract(uTime * aRate + aPhase);
-            float vis = smoothstep(0.0, 0.06, c) * (1.0 - smoothstep(0.10, 0.20, c));
-            vVis = vis;
+            float tw = smoothstep(0.0, 0.15, c) * (1.0 - smoothstep(0.3, 0.7, c));
+            vVis = alive * tw;
             gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
-            gl_PointSize = (aSize + uLight * 1.5) * (0.5 + 0.9 * vis);
+            gl_PointSize = (aSize + uLight) * (0.6 + 0.6 * vVis);
           }
         `}
         fragmentShader={`
@@ -146,14 +155,14 @@ function Glitter({ color, light }: { color: string; light: boolean }) {
           }
 
           void main() {
-            if (vVis < 0.05) discard;
+            if (vVis < 0.04) discard;
             if (uLight > 0.5) {
               // Animated dithering: crawl the Bayer threshold across the pixels.
               vec2 dc = gl_FragCoord.xy + vec2(floor(uTime * 7.0), floor(uTime * 5.0));
               if (vVis < bayer4x4(dc)) discard;
-              gl_FragColor = vec4(uColor, 1.0); // bold, full colour
+              gl_FragColor = vec4(uColor, 0.75); // subtle, bold colour
             } else {
-              gl_FragColor = vec4(uColor, vVis * 0.9);
+              gl_FragColor = vec4(uColor, vVis * 0.55);
             }
           }
         `}
