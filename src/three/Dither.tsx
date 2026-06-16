@@ -35,7 +35,14 @@ export function Dither() {
   const bw = Math.max(2, Math.floor(w / 2));
   const bh = Math.max(2, Math.floor(h / 2));
 
-  const main = useFBO(w, h, { depthBuffer: true, stencilBuffer: false });
+  // Main buffer carries a depth texture so the post pass can tell figures
+  // (which write depth) from the backdrop/glitter/floor (which don't).
+  const main = useMemo(() => {
+    const t = new THREE.WebGLRenderTarget(w, h, { depthBuffer: true, stencilBuffer: false });
+    t.depthTexture = new THREE.DepthTexture(w, h);
+    return t;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const bloomA = useFBO(bw, bh, { depthBuffer: false, stencilBuffer: false });
   const bloomB = useFBO(bw, bh, { depthBuffer: false, stencilBuffer: false });
 
@@ -98,6 +105,7 @@ export function Dither() {
       uniforms: {
         tMain: { value: null as THREE.Texture | null },
         tBloom: { value: null as THREE.Texture | null },
+        tDepth: { value: null as THREE.Texture | null },
         uRes: { value: new THREE.Vector2(1, 1) },
         uTime: { value: 0 },
       },
@@ -105,6 +113,7 @@ export function Dither() {
       fragmentShader: `
         uniform sampler2D tMain;
         uniform sampler2D tBloom;
+        uniform sampler2D tDepth;
         uniform vec2 uRes;
         uniform float uTime;
         varying vec2 vUv;
@@ -141,17 +150,22 @@ export function Dither() {
           float vig = smoothstep(1.15, 0.35, length(vd));
           c *= mix(0.72, 1.0, vig);
 
-          // Layered dithering: two ordered scales + animated blue-noise.
+          // 'c' so far is the clean lit image (bloom + ink + vignette, no
+          // dither). Build the fully-dithered version on top of it.
+          vec3 dithered = c;
           float d1 = bayer4x4(fc);
           float d2 = bayer4x4(fc * 0.5 + 11.0);
           float d3 = hash(floor(fc) + floor(uTime * 50.0));
           float d = d1 * 0.5 + d2 * 0.3 + d3 * 0.2;
           float levels = 5.0;
-          c += (d - 0.5) / levels;
-          c = floor(c * levels + 0.5) / levels;
+          dithered += (d - 0.5) / levels;
+          dithered = floor(dithered * levels + 0.5) / levels;
+          dithered += (hash(floor(fc) + floor(uTime * 37.0)) - 0.5) * 0.03;
 
-          // Faint animated grain.
-          c += (hash(floor(fc) + floor(uTime * 37.0)) - 0.5) * 0.03;
+          // Let a bit of the original (un-dithered) model show through where the
+          // depth buffer marks a figure; the backdrop stays fully dithered.
+          float isModel = step(texture2D(tDepth, uv).r, 0.9999);
+          c = mix(dithered, c, isModel * 0.5);
 
           gl_FragColor = vec4(c, 1.0);
         }
@@ -163,6 +177,7 @@ export function Dither() {
 
   useFrame((_, dt) => {
     const { scn, cam, mesh, bright, blur, final } = ctx;
+    if (main.width !== w || main.height !== h) main.setSize(w, h);
     main.texture.colorSpace = THREE.LinearSRGBColorSpace;
 
     // 1. Whole scene into the main buffer (linear).
@@ -191,6 +206,7 @@ export function Dither() {
     mesh.material = final;
     final.uniforms.tMain.value = main.texture;
     final.uniforms.tBloom.value = bloomA.texture;
+    final.uniforms.tDepth.value = main.depthTexture;
     final.uniforms.uRes.value.set(w, h);
     final.uniforms.uTime.value += dt;
     gl.setRenderTarget(null);

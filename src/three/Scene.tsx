@@ -597,10 +597,12 @@ export function Scene() {
       {/* Wind-blown pixel glitter; bold dithered accent in light mode. */}
       <Glitter color={glitterColor} light={theme === "light"} />
 
-      {/* Shadow-only floor: no tone/value on the ground, just the hard shadow. */}
+      {/* Shadow-only floor: no tone/value on the ground, just the hard shadow.
+          depthWrite off so only the figures populate the depth mask (which the
+          post-process uses to let the un-dithered model show through). */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, GROUND_Y, 0]} receiveShadow>
         <planeGeometry args={[80, 80]} />
-        <shadowMaterial transparent opacity={0.34} color="#000000" />
+        <shadowMaterial transparent depthWrite={false} opacity={0.34} color="#000000" />
       </mesh>
 
       {live.map((i) => {
