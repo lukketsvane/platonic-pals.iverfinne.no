@@ -289,6 +289,8 @@ function Backdrop() {
             return (v + 0.5) / 16.0; // strictly inside (0,1) so f=0 reveals nothing
           }
 
+          mat2 rot(float a) { return mat2(cos(a), -sin(a), sin(a), cos(a)); }
+
           // --- procedural pattern textures (return ink coverage 0..1) -------
           float patDiamond(vec2 p) {
             mat2 R = mat2(0.7071, -0.7071, 0.7071, 0.7071);
@@ -330,6 +332,49 @@ function Backdrop() {
             vec2 c = fract(p * 12.0) - 0.5;
             return smoothstep(0.36, 0.28, length(c));
           }
+          // Liquid psychedelic swirls: iterated domain warp -> glossy veins.
+          float patSwirls(vec2 p, float t) {
+            vec2 q = p * 2.4;
+            for (int i = 0; i < 4; i++) {
+              q += 0.7 * vec2(sin(q.y * 1.7 + t * 0.15), sin(q.x * 1.7 - t * 0.12));
+              q = rot(0.5) * q;
+            }
+            float v = sin(q.x * 1.5) + sin(q.y * 1.5);
+            float w = abs(fract(v * 0.5 + 0.5) - 0.5);
+            return smoothstep(0.26, 0.06, w);
+          }
+          // Soft flowing colour waves (smooth bands, not lines).
+          float patWaves(vec2 p, float t) {
+            float y = p.y * 3.0 + 0.5 * sin(p.x * 2.5 + t * 0.2)
+                    + 0.25 * sin(p.x * 5.0 - t * 0.15);
+            return 0.5 + 0.5 * sin(y * 2.0);
+          }
+          // Organic cell web with little rings (Voronoi borders + centres).
+          float patCells(vec2 p, float t) {
+            vec2 g = p * 5.0;
+            vec2 ic = floor(g);
+            vec2 fc = fract(g);
+            float d1 = 8.0, d2 = 8.0;
+            for (int y = -1; y <= 1; y++) {
+              for (int x = -1; x <= 1; x++) {
+                vec2 o = vec2(float(x), float(y));
+                vec2 fp = o + vec2(hash21(ic + o), hash21(ic + o + vec2(19.19, 7.7))) - fc;
+                float d = dot(fp, fp);
+                if (d < d1) { d2 = d1; d1 = d; }
+                else if (d < d2) { d2 = d; }
+              }
+            }
+            float lines = 1.0 - smoothstep(0.0, 0.05, d2 - d1);
+            float ring = smoothstep(0.05, 0.0, abs(sqrt(d1) - 0.34));
+            return clamp(max(lines, ring * 0.8), 0.0, 1.0);
+          }
+          // Wavy horizontal ribbons (thick painterly bands).
+          float patRibbons(vec2 p, float t) {
+            float x = p.x * 3.0;
+            float wave = 0.35 * sin(x + t * 0.15) + 0.18 * sin(x * 2.3 + 1.0);
+            float d = abs(fract(p.y * 5.0 + wave) - 0.5);
+            return smoothstep(0.34, 0.46, d);
+          }
 
           float patternInk(float id, vec2 p, float t) {
             if (id < 0.5) return patDiamond(p);
@@ -338,7 +383,11 @@ function Backdrop() {
             else if (id < 3.5) return patWeb(p, t);
             else if (id < 4.5) return patFan(p);
             else if (id < 5.5) return patStripes(p);
-            else return patDots(p);
+            else if (id < 6.5) return patDots(p);
+            else if (id < 7.5) return patSwirls(p, t);
+            else if (id < 8.5) return patWaves(p, t);
+            else if (id < 9.5) return patCells(p, t);
+            else return patRibbons(p, t);
           }
 
           vec3 sectionColor(float id, vec3 base, vec3 ink, vec2 p, float t) {
