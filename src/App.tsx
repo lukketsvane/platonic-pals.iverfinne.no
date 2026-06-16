@@ -48,7 +48,7 @@ export default function App() {
             toneMappingExposure: 1.25,
             powerPreference: "high-performance",
           }}
-          camera={{ position: [0, 1.25, 9.6], fov: 30, near: 0.1, far: 100 }}
+          camera={{ position: [0, 1.5, 9.6], fov: 30, near: 0.1, far: 100 }}
         >
           <color attach="background" args={[bg]} />
           <Suspense fallback={null}>

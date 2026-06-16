@@ -15,11 +15,19 @@ export function useGestures(el: HTMLElement | null) {
   useEffect(() => {
     if (!el) return;
 
-    const { setScroll, addAzimuth, addLight } = useStore.getState();
+    const { setScroll, addAzimuth, addLight, tap } = useStore.getState();
 
     const ORBIT_K = 0.006; // px -> radians
     const LIGHT_K = 0.014; // px -> world units
     const AXIS_LOCK = 8; // px before we commit to orbit vs scroll
+    const TAP_MOVE = 9; // max px of travel still counted as a tap
+    const TAP_TIME = 300; // max ms still counted as a tap
+
+    // A still, brief touch that never escalated to a drag = a tap on the figure.
+    const fireTap = (cx: number, cy: number, downAt: number, moved: number) => {
+      if (moved > TAP_MOVE || performance.now() - downAt > TAP_TIME) return;
+      tap((cx / window.innerWidth) * 2 - 1, -(cy / window.innerHeight) * 2 + 1);
+    };
 
     // ---- scroll position ------------------------------------------------
     const onScroll = () => {
@@ -35,6 +43,7 @@ export function useGestures(el: HTMLElement | null) {
     let lastMid = { x: 0, y: 0 };
     let velocity = 0;
     let inertia = 0;
+    let downAt = 0; // timestamp of the current press (for tap detection)
 
     const stopInertia = () => {
       if (inertia) cancelAnimationFrame(inertia);
@@ -68,6 +77,7 @@ export function useGestures(el: HTMLElement | null) {
       mode = "pending";
       startX = lastX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
+      downAt = performance.now();
       velocity = 0;
     };
 
@@ -101,8 +111,12 @@ export function useGestures(el: HTMLElement | null) {
       }
     };
 
-    const onTouchEnd = () => {
+    const onTouchEnd = (e: TouchEvent) => {
       if (mode === "orbit" && Math.abs(velocity) > 0.001) runInertia();
+      if (mode === "pending") {
+        const t = e.changedTouches[0];
+        fireTap(t.clientX, t.clientY, downAt, Math.hypot(t.clientX - startX, t.clientY - startY));
+      }
       mode = "idle";
     };
 
@@ -115,7 +129,9 @@ export function useGestures(el: HTMLElement | null) {
         lastMid = { x: e.clientX, y: e.clientY };
       } else {
         mode = "orbit";
-        lastX = e.clientX;
+        startX = lastX = e.clientX;
+        startY = e.clientY;
+        downAt = performance.now();
         velocity = 0;
       }
       e.preventDefault();
@@ -136,8 +152,11 @@ export function useGestures(el: HTMLElement | null) {
       }
     };
 
-    const onMouseUp = () => {
-      if (mode === "orbit" && Math.abs(velocity) > 0.001) runInertia();
+    const onMouseUp = (e: MouseEvent) => {
+      if (mode === "orbit") {
+        fireTap(e.clientX, e.clientY, downAt, Math.hypot(e.clientX - startX, e.clientY - startY));
+        if (Math.abs(velocity) > 0.001) runInertia();
+      }
       mode = "idle";
     };
 

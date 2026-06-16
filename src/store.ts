@@ -16,6 +16,10 @@ export const PALS: Pal[] = [
   { id: "pal_06", name: "Pal 06", url: "/models/pal_06.glb", height: 1.5 },
   { id: "pal_07", name: "Pal 07", url: "/models/pal_07.glb", height: 1.5 },
   { id: "pal_08", name: "Pal 08", url: "/models/pal_08.glb", height: 1.5 },
+  { id: "pal_09", name: "Pal 09", url: "/models/pal_09.glb", height: 1.5 },
+  { id: "pal_10", name: "Pal 10", url: "/models/pal_10.glb", height: 1.5 },
+  { id: "pal_11", name: "Pal 11", url: "/models/pal_11.glb", height: 1.5 },
+  { id: "pal_12", name: "Pal 12", url: "/models/pal_12.glb", height: 1.5 },
 ];
 
 type State = {
@@ -27,10 +31,18 @@ type State = {
   light: { x: number; y: number };
   ready: boolean;
 
+  /** Whether the centered figure is lifted off the floor and hovering. */
+  hover: boolean;
+  /** Bumped on every figure tap; carries the tap point in NDC space. */
+  tapNonce: number;
+  tapNDC: { x: number; y: number };
+
   setScroll: (v: number) => void;
   addAzimuth: (d: number) => void;
   addLight: (dx: number, dy: number) => void;
   setReady: (v: boolean) => void;
+  tap: (x: number, y: number) => void;
+  setHover: (v: boolean) => void;
 };
 
 export const useStore = create<State>((set) => ({
@@ -38,6 +50,9 @@ export const useStore = create<State>((set) => ({
   azimuth: 0,
   light: { x: 0, y: 0 },
   ready: false,
+  hover: false,
+  tapNonce: 0,
+  tapNDC: { x: 0, y: 0 },
 
   setScroll: (v) => set({ scroll: v }),
   addAzimuth: (d) => set((s) => ({ azimuth: s.azimuth + d })),
@@ -50,6 +65,8 @@ export const useStore = create<State>((set) => ({
       },
     })),
   setReady: (v) => set({ ready: v }),
+  tap: (x, y) => set((s) => ({ tapNonce: s.tapNonce + 1, tapNDC: { x, y } })),
+  setHover: (v) => set({ hover: v }),
 }));
 
 function clamp(v: number, min: number, max: number) {
