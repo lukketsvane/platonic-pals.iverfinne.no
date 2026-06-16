@@ -16,12 +16,16 @@ export function Lights() {
   const b = useTheme() === "light" ? 1.4 : 1;
 
   useFrame((_, dt) => {
-    const { light } = useStore.getState();
+    const { light, scroll } = useStore.getState();
     const g = rig.current;
     if (!g) return;
+    // The rig sweeps as you scroll, so the hard shadows swing across the floor
+    // from section to section — on top of any two-finger light drag.
+    const sweepX = Math.sin(scroll * 1.15) * 3.4;
+    const sweepY = Math.cos(scroll * 0.8) * 1.3;
     const k = 1 - Math.pow(0.0001, dt); // frame-rate independent smoothing
-    g.position.x += (light.x - g.position.x) * k;
-    g.position.y += (light.y - g.position.y) * k;
+    g.position.x += (light.x + sweepX - g.position.x) * k;
+    g.position.y += (light.y + sweepY - g.position.y) * k;
   });
 
   return (

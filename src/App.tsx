@@ -4,6 +4,7 @@ import { useProgress } from "@react-three/drei";
 import * as THREE from "three";
 import { PALS, useStore } from "./store";
 import { Scene } from "./three/Scene";
+import { Dither } from "./three/Dither";
 import { useGestures } from "./useGestures";
 
 /** Pixelated editorial HUD: wordmark, index counter, big figure name. */
@@ -77,6 +78,8 @@ export default function App() {
           <Suspense fallback={null}>
             <Scene />
           </Suspense>
+          {/* Global dither / halftone post-process over the whole frame. */}
+          <Dither />
         </Canvas>
       </div>
 
