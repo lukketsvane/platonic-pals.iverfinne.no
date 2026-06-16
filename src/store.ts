@@ -27,10 +27,18 @@ type State = {
   light: { x: number; y: number };
   ready: boolean;
 
+  /** Whether the centered figure is lifted off the floor and hovering. */
+  hover: boolean;
+  /** Bumped on every figure tap; carries the tap point in NDC space. */
+  tapNonce: number;
+  tapNDC: { x: number; y: number };
+
   setScroll: (v: number) => void;
   addAzimuth: (d: number) => void;
   addLight: (dx: number, dy: number) => void;
   setReady: (v: boolean) => void;
+  tap: (x: number, y: number) => void;
+  setHover: (v: boolean) => void;
 };
 
 export const useStore = create<State>((set) => ({
@@ -38,6 +46,9 @@ export const useStore = create<State>((set) => ({
   azimuth: 0,
   light: { x: 0, y: 0 },
   ready: false,
+  hover: false,
+  tapNonce: 0,
+  tapNDC: { x: 0, y: 0 },
 
   setScroll: (v) => set({ scroll: v }),
   addAzimuth: (d) => set((s) => ({ azimuth: s.azimuth + d })),
@@ -50,6 +61,8 @@ export const useStore = create<State>((set) => ({
       },
     })),
   setReady: (v) => set({ ready: v }),
+  tap: (x, y) => set((s) => ({ tapNonce: s.tapNonce + 1, tapNDC: { x, y } })),
+  setHover: (v) => set({ hover: v }),
 }));
 
 function clamp(v: number, min: number, max: number) {
