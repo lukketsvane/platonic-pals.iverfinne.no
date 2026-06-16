@@ -34,14 +34,18 @@ function Glitter({ color, light }: { color: string; light: boolean }) {
     const seed = new Float32Array(COUNT);
     const thresh = new Float32Array(COUNT);
     for (let i = 0; i < COUNT; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 5.5;
-      pos[i * 3 + 1] = -0.4 + Math.random() * 3.6;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 4;
+      // Cluster the dust softly around the figure (above the floor), so sparks
+      // hug the silhouette instead of peppering the whole frame.
+      const r = Math.pow(Math.random(), 0.55);
+      const ang = Math.random() * Math.PI * 2;
+      pos[i * 3] = Math.cos(ang) * 1.7 * r + (Math.random() - 0.5) * 0.5;
+      pos[i * 3 + 1] = 0.15 + Math.random() * 2.9;
+      pos[i * 3 + 2] = Math.sin(ang) * 1.4 * r + (Math.random() - 0.5) * 0.5;
       phase[i] = Math.random();
-      size[i] = 1 + Math.floor(Math.random() * 2); // 1..2 px sparks
-      rate[i] = 0.5 + Math.random() * 1.1; // slow, dusty fade in/out
+      size[i] = Math.random(); // 0..1, scaled in the shader
+      rate[i] = 0.4 + Math.random() * 0.9; // slow, dusty fade in/out
       seed[i] = Math.random();
-      thresh[i] = Math.random(); // movement level needed to wake this spark
+      thresh[i] = Math.random() * 0.9; // movement level needed to wake it
     }
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
@@ -85,9 +89,9 @@ function Glitter({ color, light }: { color: string; light: boolean }) {
     energy.current += (tgt - energy.current) * k;
 
     // A small kick in the direction of motion that eases back toward rest.
-    drift.current.x += dAz * 1.6;
-    drift.current.y += -dSc * 0.6;
-    const ease = Math.pow(0.05, dt);
+    drift.current.x += dAz * 0.9;
+    drift.current.y += -dSc * 0.45;
+    const ease = Math.pow(0.04, dt);
     drift.current.x *= ease;
     drift.current.y *= ease;
 
@@ -122,22 +126,22 @@ function Glitter({ color, light }: { color: string; light: boolean }) {
           uniform float uLight;
           varying float vVis;
           void main() {
-            vec3 BOUND = vec3(2.75, 2.0, 2.0);
-            vec3 ORIG  = vec3(0.0, 1.4, 0.0);
             vec3 p = position;
-            // Slow dust float: gentle ambient sway + the motion kick.
-            p.x += sin(uTime * 0.5 + aSeed * 40.0) * 0.22 + uDrift.x;
-            p.y += cos(uTime * 0.42 + aSeed * 33.0) * 0.16 + uDrift.y;
-            vec3 rel = mod(p - ORIG + BOUND, 2.0 * BOUND);
-            p = rel - BOUND + ORIG;
+            // Slow dust float: a gentle ambient sway plus a parallaxed motion
+            // kick. No wrapping — the sway is bounded, so nothing pops at edges.
+            float par = 0.5 + aSeed;
+            p.x += sin(uTime * 0.55 + aSeed * 40.0) * 0.13 + uDrift.x * par;
+            p.y += cos(uTime * 0.45 + aSeed * 33.0) * 0.10
+                 + sin(uTime * 0.18 + aSeed * 9.0) * 0.05 + uDrift.y * par;
+            p.z += sin(uTime * 0.50 + aSeed * 27.0) * 0.13;
             // Wake only the sparks whose threshold the current energy clears.
-            float alive = smoothstep(aThresh, aThresh + 0.2, uEnergy);
-            // Soft, dusty flicker (not a hard blink).
+            float alive = smoothstep(aThresh, aThresh + 0.28, uEnergy);
+            // A single soft pulse per cycle (smooth rise and fall).
             float c = fract(uTime * aRate + aPhase);
-            float tw = smoothstep(0.0, 0.15, c) * (1.0 - smoothstep(0.3, 0.7, c));
+            float tw = pow(max(sin(c * 3.14159265), 0.0), 1.6);
             vVis = alive * tw;
             gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
-            gl_PointSize = (aSize + uLight) * (0.6 + 0.6 * vVis);
+            gl_PointSize = (2.4 + aSize * 2.2 + uLight) * (0.5 + 0.7 * vVis);
           }
         `}
         fragmentShader={`
@@ -155,14 +159,19 @@ function Glitter({ color, light }: { color: string; light: boolean }) {
           }
 
           void main() {
-            if (vVis < 0.04) discard;
+            if (vVis < 0.03) discard;
+            // Soft round spark instead of a hard square.
+            vec2 q = gl_PointCoord - 0.5;
+            float soft = smoothstep(0.5, 0.05, length(q));
+            if (soft <= 0.0) discard;
+            float a = vVis * soft;
             if (uLight > 0.5) {
               // Animated dithering: crawl the Bayer threshold across the pixels.
-              vec2 dc = gl_FragCoord.xy + vec2(floor(uTime * 7.0), floor(uTime * 5.0));
-              if (vVis < bayer4x4(dc)) discard;
-              gl_FragColor = vec4(uColor, 0.75); // subtle, bold colour
+              vec2 dc = gl_FragCoord.xy + vec2(floor(uTime * 6.0), floor(uTime * 4.0));
+              if (a < bayer4x4(dc) * 0.85) discard;
+              gl_FragColor = vec4(uColor, 0.6 * soft + 0.25); // subtle, bold colour
             } else {
-              gl_FragColor = vec4(uColor, vVis * 0.55);
+              gl_FragColor = vec4(uColor, a * 0.6);
             }
           }
         `}
