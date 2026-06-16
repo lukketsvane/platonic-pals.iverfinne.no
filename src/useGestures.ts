@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useStore } from "./store";
+import { PALS, useStore } from "./store";
 
 /**
  * Wires up all touch / pointer gestures on the scroll layer:
@@ -29,10 +29,30 @@ export function useGestures(el: HTMLElement | null) {
       tap((cx / window.innerWidth) * 2 - 1, -(cy / window.innerHeight) * 2 + 1);
     };
 
-    // ---- scroll position ------------------------------------------------
+    // ---- scroll position (with seamless infinite loop) ------------------
+    // The DOM has a clone of the last figure prepended and the first appended,
+    // so the real figures live on pages 1..N. Continuous scroll is reported in
+    // figure space (0..N-1) as `scrollTop / h - 1`. Once the scroll settles on
+    // one of the clone pages we reseat it to the matching real page; the clone
+    // shows the identical figure, so the jump is invisible and scrolling loops.
+    let settleTimer = 0;
+
+    const reseatLoop = () => {
+      const h = el.clientHeight || window.innerHeight;
+      const N = PALS.length;
+      const page = Math.round(el.scrollTop / h); // 0 .. N+1
+      if (page <= 0) {
+        el.scrollTop = N * h; // top clone (last) -> real last page
+      } else if (page >= N + 1) {
+        el.scrollTop = h; // bottom clone (first) -> real first page
+      }
+    };
+
     const onScroll = () => {
       const h = el.clientHeight || window.innerHeight;
-      setScroll(el.scrollTop / h);
+      setScroll(el.scrollTop / h - 1);
+      if (settleTimer) clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(reseatLoop, 90);
     };
 
     // ---- shared single-finger / mouse orbit state -----------------------
@@ -173,6 +193,7 @@ export function useGestures(el: HTMLElement | null) {
 
     return () => {
       stopInertia();
+      if (settleTimer) clearTimeout(settleTimer);
       el.removeEventListener("scroll", onScroll);
       el.removeEventListener("touchstart", onTouchStart);
       el.removeEventListener("touchmove", onTouchMove);

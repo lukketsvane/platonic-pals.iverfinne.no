@@ -6,16 +6,32 @@ export type Pal = {
   url: string;
   /** Target on-screen height in world units once normalized. */
   height: number;
+  /**
+   * Bold, fully-saturated colour that is complementary to the figure's own
+   * dominant hue. Used for the light-mode glitter so each section pops with
+   * its own pairing (the opposite of the model's palette).
+   */
+  accent: string;
 };
 
+// Figures are normalized to a common height; 2.34 ≈ 30% larger than the old 1.8.
+const H = 2.34;
+
 export const PALS: Pal[] = [
-  { id: "seed", name: "Seed", url: "/models/polypal_seed.glb", height: 1.8 },
-  { id: "cuboid", name: "Cuboid", url: "/models/polypal_cuboid.glb", height: 1.8 },
-  { id: "flywheel", name: "Flywheel", url: "/models/polypal_flywheel.glb", height: 1.8 },
-  { id: "iridescent", name: "Iridescent", url: "/models/polypal_iridescent.glb", height: 1.8 },
-  { id: "neodynium", name: "Neodynium", url: "/models/polypal_neodynium.glb", height: 1.8 },
-  { id: "juxtaposed", name: "Juxtaposed", url: "/models/polypal_juxtaposed.glb", height: 1.8 },
-  { id: "docu", name: "Docu", url: "/models/polypal_docu.glb", height: 1.8 },
+  // Olive-green pod      -> magenta
+  { id: "seed", name: "Seed", url: "/models/polypal_seed.glb", height: H, accent: "#e01f9b" },
+  // Cool grey blocks     -> warm orange
+  { id: "cuboid", name: "Cuboid", url: "/models/polypal_cuboid.glb", height: H, accent: "#ff5a1f" },
+  // Navy-blue flywheel   -> golden amber
+  { id: "flywheel", name: "Astrolabium", url: "/models/polypal_flywheel.glb", height: H, accent: "#ffb300" },
+  // Dark iridescent      -> electric cyan
+  { id: "iridescent", name: "Iridescent", url: "/models/polypal_iridescent.glb", height: H, accent: "#00e5ff" },
+  // Graphite metal       -> crimson
+  { id: "neodynium", name: "Neodynium", url: "/models/polypal_neodynium.glb", height: H, accent: "#ff2d4f" },
+  // Mixed tones          -> vivid violet
+  { id: "juxtaposed", name: "Juxtaposed", url: "/models/polypal_juxtaposed.glb", height: H, accent: "#7b5cff" },
+  // Neutral paper        -> lime
+  { id: "docu", name: "Docu", url: "/models/polypal_docu.glb", height: H, accent: "#6ee63c" },
 ];
 
 type State = {
