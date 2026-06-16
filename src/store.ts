@@ -13,7 +13,7 @@ export type Pal = {
    */
   accent: string;
   /** Procedural background texture for this section (see Backdrop in Scene). */
-  pattern: number; // 0 diamond·1 checker·2 stars·3 web·4 fan·5 stripes·6 dots·7 swirls·8 waves·9 cells·10 ribbons
+  pattern: number; // 0 diamond·1 checker·2 stars·3 web·4 fan·5 stripes·6 dots·7 swirls·8 waves·9 cells·10 ribbons·11 cross·12 arch·13 hatch
   bgBase: string; // bold field colour
   bgInk: string; // pattern colour drawn over the field
 };
@@ -22,20 +22,20 @@ export type Pal = {
 const H = 2.34;
 
 export const PALS: Pal[] = [
-  // Olive-green pod      -> magenta
+  // Cracked seed pod · magenta diamond lattice
   { id: "seed", name: "Seed", url: "/models/polypal_seed.glb", height: H, accent: "#e01f9b", pattern: 0, bgBase: "#ff2d9e", bgInk: "#eaff66" },
-  // Cool grey blocks     -> warm orange · soft blue/pink waves
-  { id: "cuboid", name: "Cuboid", url: "/models/polypal_cuboid.glb", height: H, accent: "#ff5a1f", pattern: 8, bgBase: "#3a5bf0", bgInk: "#e59cf5" },
-  // Navy-blue flywheel   -> golden amber
-  { id: "flywheel", name: "Astrolabium", url: "/models/polypal_flywheel.glb", height: H, accent: "#ffb300", pattern: 2, bgBase: "#2f6bff", bgInk: "#ffffff" },
-  // Dark iridescent      -> electric cyan · liquid pink swirls on maroon
-  { id: "iridescent", name: "Iridescent", url: "/models/polypal_iridescent.glb", height: H, accent: "#00e5ff", pattern: 7, bgBase: "#4a0d22", bgInk: "#f3a6b8" },
-  // Graphite metal       -> crimson
-  { id: "neodynium", name: "Neodynium", url: "/models/polypal_neodynium.glb", height: H, accent: "#ff2d4f", pattern: 4, bgBase: "#8a3b2a", bgInk: "#f2e9e0" },
-  // Mixed tones          -> vivid violet · green with pink wavy ribbons
-  { id: "juxtaposed", name: "Juxtaposed", url: "/models/polypal_juxtaposed.glb", height: H, accent: "#7b5cff", pattern: 10, bgBase: "#3f7d2e", bgInk: "#eaa0d6" },
-  // Neutral paper        -> lime · lilac with gold cell web
-  { id: "docu", name: "Docu", url: "/models/polypal_docu.glb", height: H, accent: "#6ee63c", pattern: 9, bgBase: "#c77dff", bgInk: "#d99a3a" },
+  // Stacked blocks · soft blue/pink waves
+  { id: "cuboid", name: "Cube", url: "/models/polypal_cuboid.glb", height: H, accent: "#ff5a1f", pattern: 8, bgBase: "#3a5bf0", bgInk: "#e59cf5" },
+  // Concentric rings · blue starburst grid
+  { id: "flywheel", name: "Gyro", url: "/models/polypal_flywheel.glb", height: H, accent: "#ffb300", pattern: 2, bgBase: "#2f6bff", bgInk: "#ffffff" },
+  // Iridescent solid · liquid pink swirls on maroon
+  { id: "iridescent", name: "Opal", url: "/models/polypal_iridescent.glb", height: H, accent: "#00e5ff", pattern: 7, bgBase: "#4a0d22", bgInk: "#f3a6b8" },
+  // Magnet coil knot · rust U-bend tubes
+  { id: "neodynium", name: "Magnet", url: "/models/polypal_neodynium.glb", height: H, accent: "#ff2d4f", pattern: 12, bgBase: "#8a3b2a", bgInk: "#f2e9e0" },
+  // Star tetrahedron · green field of pink X's
+  { id: "juxtaposed", name: "Tetra", url: "/models/polypal_juxtaposed.glb", height: H, accent: "#7b5cff", pattern: 11, bgBase: "#3f7d2e", bgInk: "#eaa0d6" },
+  // Mask / idol · lilac with gold cell web
+  { id: "docu", name: "Idol", url: "/models/polypal_docu.glb", height: H, accent: "#6ee63c", pattern: 9, bgBase: "#c77dff", bgInk: "#d99a3a" },
 ];
 
 type State = {

@@ -375,6 +375,27 @@ function Backdrop() {
             float d = abs(fract(p.y * 5.0 + wave) - 0.5);
             return smoothstep(0.34, 0.46, d);
           }
+          // Scattered hand-drawn X / crosses on a jittered grid.
+          float patCross(vec2 p, float t) {
+            vec2 cell = p * 6.0;
+            vec2 id = floor(cell);
+            vec2 c = fract(cell) - 0.5;
+            float arm = min(abs(c.x - c.y), abs(c.x + c.y));
+            float box = step(max(abs(c.x), abs(c.y)), 0.34);
+            return smoothstep(0.08, 0.03, arm) * box * step(0.4, hash21(id));
+          }
+          // Rows of U-bend tubes (legs + arch).
+          float patArch(vec2 p, float t) {
+            vec2 c = fract(p * 3.2) - vec2(0.5, 0.4);
+            float r = length(vec2(c.x, max(c.y, 0.0)));
+            return smoothstep(0.1, 0.04, abs(r - 0.3));
+          }
+          // Diagonal crosshatch.
+          float patHatch(vec2 p, float t) {
+            float a = abs(fract((p.x + p.y) * 7.0) - 0.5);
+            float b = abs(fract((p.x - p.y) * 7.0) - 0.5);
+            return max(smoothstep(0.42, 0.5, a), smoothstep(0.42, 0.5, b));
+          }
 
           float patternInk(float id, vec2 p, float t) {
             if (id < 0.5) return patDiamond(p);
@@ -387,7 +408,10 @@ function Backdrop() {
             else if (id < 7.5) return patSwirls(p, t);
             else if (id < 8.5) return patWaves(p, t);
             else if (id < 9.5) return patCells(p, t);
-            else return patRibbons(p, t);
+            else if (id < 10.5) return patRibbons(p, t);
+            else if (id < 11.5) return patCross(p, t);
+            else if (id < 12.5) return patArch(p, t);
+            else return patHatch(p, t);
           }
 
           vec3 sectionColor(float id, vec3 base, vec3 ink, vec2 p, float t) {
